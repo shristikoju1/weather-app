@@ -1,4 +1,3 @@
-/// <reference types="vite-plugin-svgr/client" />
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { AiOutlineSearch } from "react-icons/ai";
@@ -10,11 +9,9 @@ import {
 } from "react-icons/bs";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import { WiBarometer } from "react-icons/wi";
-import { FiWind } from "react-icons/fi";
 import { RiLoaderFill } from "react-icons/ri";
 import { IoWaterSharp } from "react-icons/io5";
-import { FiSunrise, FiSunset } from "react-icons/fi";
-// import { ReactComponent as SemiCircle } from "../assets/line.svg";
+import { FiSunrise, FiSunset, FiWind  } from "react-icons/fi";
 import semiCircle from "../assets/line.svg";
 import "./styles.scss";
 
@@ -40,7 +37,7 @@ interface WeatherDataProps {
 
 const DisplayWeather = () => {
   const apiKey = "7f0df34d540fea45ed3dccd5827ef962";
-  const apiEndPoint = "http://api.openweathermap.org/data/2.5/weather";
+  const apiEndPoint = "https://api.openweathermap.org/data/2.5/weather";
 
   const [weather, setWeather] = useState<WeatherDataProps | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +48,7 @@ const DisplayWeather = () => {
     try {
       const url = `${apiEndPoint}?q=${city}&appid=${apiKey}&units=metric`;
       const response = await axios.get(url);
+      setError(null); // Reset error on successful fetch
       return response.data;
     } catch (error) {
       console.error("Error fetching weather data:", error);
@@ -61,6 +59,7 @@ const DisplayWeather = () => {
 
   const handleSearch = async () => {
     if (searchCity.trim() === "") {
+      setError("Please enter a city name");
       return;
     }
 
@@ -69,8 +68,7 @@ const DisplayWeather = () => {
       const weatherData = await fetchWeatherData(searchCity);
       setWeather(weatherData);
       setIsLoading(false);
-    } catch (error) {
-      console.error("No results found", error);
+    } catch {
       setError("No results found");
       setIsLoading(false);
     }
@@ -85,22 +83,18 @@ const DisplayWeather = () => {
         iconElement = <BsFillCloudRainFill />;
         iconColor = "#272829";
         break;
-
       case "Clear":
         iconElement = <BsFillSunFill />;
         iconColor = "#ffc436";
         break;
-
       case "Clouds":
         iconElement = <BsCloudyFill />;
         iconColor = "#2B4A7E";
         break;
-
       case "Mist":
         iconElement = <BsCloudFog2Fill />;
         iconColor = "#279eff";
         break;
-
       default:
         iconElement = <TiWeatherPartlySunny />;
         iconColor = "#7b2869";
@@ -122,7 +116,6 @@ const DisplayWeather = () => {
             const url = `${apiEndPoint}?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
             const response = await axios.get(url);
             setWeather(response.data);
-            console.log(response);
             setIsLoading(false);
           },
           (error) => {
@@ -149,19 +142,17 @@ const DisplayWeather = () => {
     { time: "02:00 PM", icon: "Cloudy", temp: "18°C" },
   ];
 
-  const HourlyForecast = () => {
-    return (
-      <div className="hourlyForecast">
-        {hourlyData.map((hour, index) => (
-          <div className="hourlyItem" key={index}>
-            <p className="hourlyTime">{hour.time}</p>
-            <div className="hourlyIcon">{hour.icon}</div>
-            <p className="hourlyTemp">{hour.temp}</p>
-          </div>
-        ))}
-      </div>
-    );
-  };
+  const HourlyForecast = () => (
+    <div className="hourlyForecast">
+      {hourlyData.map((hour, index) => (
+        <div className="hourlyItem" key={index}>
+          <p className="hourlyTime">{hour.time}</p>
+          <div className="hourlyIcon">{iconChanger(hour.icon)}</div>
+          <p className="hourlyTemp">{hour.temp}</p>
+        </div>
+      ))}
+    </div>
+  );
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
@@ -174,6 +165,7 @@ const DisplayWeather = () => {
 
     return `${hours}:${minutesStr} ${ampm}`;
   };
+
   return (
     <div className="main-wrapper">
       <div className="ellipseOne"></div>
@@ -187,9 +179,9 @@ const DisplayWeather = () => {
             onChange={(e) => setSearchCity(e.target.value)}
             className="search-input"
           />
-          <div className="search-circle" onClick={handleSearch}>
+          <button className="search-circle" onClick={handleSearch}>
             <AiOutlineSearch />
-          </div>
+          </button>
         </div>
 
         {!isLoading && weather ? (
@@ -224,7 +216,6 @@ const DisplayWeather = () => {
 
             <div className="bottom-info-area">
               <div className="humidity">
-                {/* <WiHumidity /> */}
                 <IoWaterSharp className="humidIcon" />
                 <div className="humidInfo">
                   <h2>{weather.main.humidity}%</h2>
@@ -251,7 +242,7 @@ const DisplayWeather = () => {
           </>
         ) : (
           <div>
-            {isLoading ? <RiLoaderFill /> : <h2>No Weather Data Found</h2>}
+            {isLoading ? <RiLoaderFill /> : <h2>{error ?? "No Weather Data Found"}</h2>}
           </div>
         )}
       </div>
